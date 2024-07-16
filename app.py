@@ -117,7 +117,7 @@ async def handler(websocket:WebSocketCommonProtocol):
             websockets.broadcast(conIds,json.dumps({"type":"remove_player","data":{"name":name,"admin":admin}}))
         print("Finally")
 
-async def handleSigTerm(stop):
+async def broadcastShutdown(stop):
     try:
         ids = allConnected()
         message = json.dumps({"type":"disconnected"})
@@ -126,6 +126,9 @@ async def handleSigTerm(stop):
         pass
     finally:
         stop.set_result()
+
+def handleSigTerm(stop):
+    asyncio.create_task(broadcastShutdown(stop))
 
 async def main():
     DEBUG = False
