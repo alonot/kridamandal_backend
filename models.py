@@ -93,7 +93,10 @@ class Game:
         return res
     
     def gameDrawn(self):
-        return self.__gameObj.game_drawn()
+        res = self.__gameObj.game_drawn()
+        if res:
+            self.__gameObj.prepareForNextGame()
+        return res
 
 '''
     class depicting single object in the 'room' map.
