@@ -7,6 +7,12 @@ import numpy as np
 
 
 class TicTacToe:
+    '''
+        player numbers -> [1,2]
+        filled_blocks -> Helps in determining if game is drawn or not
+        board -> the main board
+        current_player 
+    '''
     def __init__(self) -> None:
         self.players = [1,2]
         self.filled_blocks = 0
@@ -14,12 +20,18 @@ class TicTacToe:
         self.current_player = 0
     
     def prepareForNextGame(self):
+        '''
+            Prepare this object for the next game
+        '''
         self.players = [1,2]
         self.filled_blocks = 0
         self.board = np.zeros([3,3]).astype(np.uint8)
         self.current_player = self.current_player
 
     def play(self, move):
+        '''
+            Play the given move and return true is move was legal
+        '''
         if  not isinstance(move,list):
             return False
         player_num = self.players[self.current_player]
@@ -32,9 +44,15 @@ class TicTacToe:
             return False
 
     def game_drawn(self):
+        '''
+            Checks whether game is drawn or not
+        '''
         return self.filled_blocks == 9
 
     def game_completed(self,player_ind):
+        '''
+            checks whther given player won or not
+        '''
         player_num = self.players[player_ind] 
         player_win_str = '{0}{0}{0}'.format(player_num)
         board = self.board

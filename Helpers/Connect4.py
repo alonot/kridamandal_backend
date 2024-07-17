@@ -1,12 +1,14 @@
 # 3rd party libs
 import numpy as np
 
-#https://stackoverflow.com/a/37737985
-# def turn_worker(board, send_end, p_func):
-#     send_end.send(p_func(board))
-
 
 class Connect4:
+    '''
+        player numbers -> [1,2]
+        gameOver -> stores whether current game is over or not
+        board -> the main board
+        current_player 
+    '''
     def __init__(self) -> None:
         self.players = [1,2]
         self.gameOver = False
@@ -14,12 +16,18 @@ class Connect4:
         self.current_player = 0
     
     def prepareForNextGame(self):
+        '''
+            Prepare this object for the next game
+        '''
         self.players = [1,2]
         self.gameOver = False
         self.board = np.zeros([6,7]).astype(np.uint8)
         self.current_player = self.current_player
 
     def play(self, move):
+        '''
+            Play the given move and return true is move was legal
+        '''
         if  not isinstance(move,int):
             return False
         player_num = self.players[self.current_player]
@@ -41,9 +49,15 @@ class Connect4:
             return False
 
     def game_drawn(self):
+        '''
+            Checks whether game is drawn or not
+        '''
         return 0 not in self.board[0]
 
     def game_completed(self,player_ind):
+        '''
+            checks whther given player won or not
+        '''
         player_num = self.players[player_ind] 
         player_win_str = '{0}{0}{0}{0}'.format(player_num)
         board = self.board

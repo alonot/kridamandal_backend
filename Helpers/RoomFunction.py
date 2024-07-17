@@ -9,10 +9,16 @@ from websockets import WebSocketCommonProtocol
 MAX_PLAYERS = 6
 
 def leaveRoom(websocket:WebSocketCommonProtocol):
+    '''
+        Removes this player from the room,
+        If this player was last to leave, It deletes the room
+        If this player was admin, then transfer the admin to some other student
+    '''
     conIds = []
     to_delete = ""
     admin = ""
     web_id = websocket.id.__str__()
+    # if web_id is in the connection
     if (all_connections.__contains__(web_id)):
         room_id,player_name = all_connections[web_id]
         if (rooms.__contains__(room_id)):
@@ -20,6 +26,7 @@ def leaveRoom(websocket:WebSocketCommonProtocol):
             
             to_delete = ""
             transferAdmin = False
+            # checks if this player is present and is admin
             if room.players.__contains__(player_name):
                 player = room.players[player_name]
                 to_delete = player_name
@@ -31,18 +38,20 @@ def leaveRoom(websocket:WebSocketCommonProtocol):
             if room.players.__len__() == 0:
                 del rooms[room_id]
             elif transferAdmin:
+                # transfer the admin 
                 for key in room.players.keys():
                     first_key = key
                 admin = first_key
                 room.players[first_key].isAdmin = True # making any other player, the admin
+
         del all_connections[web_id]
     return conIds,to_delete,admin
 
 
-'''
-    Creates a room with the given object
-'''
 def createRoom(request:dict[str,any], websocket:WebSocketCommonProtocol):
+    '''
+        Creates a room with the given object
+    '''
     if not request.__contains__('room_id'):
         return {"type":"error","message":"room_id not provided"}
     if not request.__contains__('password'):
@@ -66,10 +75,10 @@ def createRoom(request:dict[str,any], websocket:WebSocketCommonProtocol):
     return {"type":"create_room","data":res_room}
 
 
-'''
-    Add a player to the given room
-'''
 def addPlayer(request:dict[str,str],websocket:WebSocketCommonProtocol,isAdmin = False):
+    '''
+        Add a player to the given room
+    '''
     receipients = [websocket]
     if not request.__contains__('room_id'):
         return {"type":"error","message":"room_id not provided"},receipients
@@ -99,7 +108,7 @@ def addPlayer(request:dict[str,str],websocket:WebSocketCommonProtocol,isAdmin = 
     receipients = [p.connection for p in room.players.values()]
     room.players[name] = player
     all_connections[websocket.id.__str__()] = [room_id, name]
-    # room.currGame.watchers.append(websocket)
+    
     res_room = room.json()
     res_room["device_player"] = player.json()['name']
     return {
@@ -110,6 +119,10 @@ def addPlayer(request:dict[str,str],websocket:WebSocketCommonProtocol,isAdmin = 
 
 
 def initialize(request:dict[str,str], websocket:WebSocketCommonProtocol):
+    '''
+        A request to initialize the board
+        This requires player to be admin
+    '''
     recepient = [websocket]
     if not request.__contains__('players'):
         return [{"type":"error","message":"players not provided"}],[recepient]
@@ -180,6 +193,11 @@ def initialize(request:dict[str,str], websocket:WebSocketCommonProtocol):
     return [{"type":"ready","data":gameName},{"type":"role_update","roles":players_update}],[list(selected_players_sockets), connectedIds]
 
 def player_ready(request:dict[str,str], websocket:WebSocketCommonProtocol):
+    '''
+        Player declares "am ready".
+        returns either of two message, either to create and start a new room or 
+        wait for other players
+    '''
     recepient = [websocket]
     web_id = websocket.id.__str__()
     if (not all_connections.__contains__(web_id)):
@@ -215,6 +233,10 @@ def player_ready(request:dict[str,str], websocket:WebSocketCommonProtocol):
         return {"type":"error","message":"This Player is not present in its associated room."},recepient
     
 def play(request:dict[str,str], websocket:WebSocketCommonProtocol):
+    '''
+        Plays a move. This can only be used by a "player",admin also cannot
+        use this, if he is not a player for the currentGame
+    '''
     recepient = [websocket]
     if not request.__contains__('move'):
         return [{"type":"error","message":"move not provided"}],recepient
@@ -241,7 +263,7 @@ def play(request:dict[str,str], websocket:WebSocketCommonProtocol):
     if not game.isPlayer(player_name):
         return [{"type":"error","message":"You are an audience for this game."}],recepient
     
-    print(room.players[player_name].role,f"player{game.currentPlayer()}")
+    # print(room.players[player_name].role,f"player{game.currentPlayer()}")
     if room.players[player_name].role != f"player{game.currentPlayer()}":
         return [{"type":"error","message":"This is not your turn"}],recepient
     
@@ -252,11 +274,14 @@ def play(request:dict[str,str], websocket:WebSocketCommonProtocol):
         to_send = [{"type":"play","data":{"move":move,"current_player":currPlayer}}]
         player_won = game.won(currPlayer)
         if player_won:
+            # sends a won request and then a request to re create the board
             updatePlayers(player_name,copy(game.players),room.players)
             all_players = room.json()['players']
             to_send.append({"type":'won',"data": {"won":player_name,"currPlayer":currPlayer,"all_players":all_players}})
             to_send.append({"type":"create_board","data":{"game":game.gameName,"current_player":game.currentPlayer()}})
+
         elif game.gameDrawn():
+            # draw request and then re create the board
             to_send.append({"type":"draw"})
             to_send.append({"type":"create_board","data":{"game":game.gameName,"current_player":game.currentPlayer()}})
 
@@ -267,6 +292,9 @@ def play(request:dict[str,str], websocket:WebSocketCommonProtocol):
         return [{"type":"error","message":"Invalid move"}],recepient
     
 def updatePlayers(player_won:str,playing:list[str],all_players:dict[str,Player]):
+    '''
+        Helper function to update the players with won and lost
+    '''
     playing.remove(player_won)
     lost_players = playing
     for ply in lost_players:
@@ -279,11 +307,11 @@ def updatePlayers(player_won:str,playing:list[str],all_players:dict[str,Player])
 
         
 
-
-    
-
-
 def cancelGame(request:dict[str,str], websocket:WebSocketCommonProtocol):
+    '''
+        Cancels the game and send a request to all the players 
+        in the room to cancel the game.
+    '''
     recepient = [websocket]
     web_id = websocket.id.__str__()
     if (not all_connections.__contains__(web_id)):
@@ -319,6 +347,9 @@ def cancelGame(request:dict[str,str], websocket:WebSocketCommonProtocol):
 
 
 def allConnected():
+    '''
+        return list of all the websockets connected to this server
+    '''
     connectedIds = []
     for _,info in all_connections.items(): 
         room_id,player_name = info

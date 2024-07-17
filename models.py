@@ -1,6 +1,3 @@
-'''
-    Dummy class depicting a player
-'''
 from datetime import datetime
 
 from websockets import WebSocketCommonProtocol
@@ -87,12 +84,18 @@ class Game:
                 return None
 
     def won(self,player_ind):
+        '''
+            Checks if player won or not, if yes then prepare for next game
+        '''
         res = self.__gameObj.game_completed(player_ind)
         if res:
             self.__gameObj.prepareForNextGame()
         return res
     
     def gameDrawn(self):
+        '''
+            Checks if match is draawn or not, if yes then prepare for next game
+        '''
         res = self.__gameObj.game_drawn()
         if res:
             self.__gameObj.prepareForNextGame()

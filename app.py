@@ -18,7 +18,7 @@ async def handler(websocket:WebSocketCommonProtocol):
             broadcast = False
             connecteds = [websocket]
             sleep = False
-            print(msg)
+            # print(msg)
             match(msg["type"]):
                 case "create":
                     result = [(createRoom(msg,websocket))]
@@ -27,6 +27,9 @@ async def handler(websocket:WebSocketCommonProtocol):
                 case "add_player":
                     res,connecteds = addPlayer(msg,websocket)
                     if res['type'] != 'error':
+                        # create room request to this player and then 
+                        # pass the result to broadcast other players that new player
+                        # joined
                         await websocket.send(json.dumps({
                             "type":"create_room",
                             "data":res['room']
@@ -52,9 +55,12 @@ async def handler(websocket:WebSocketCommonProtocol):
                 case "initialize":
                     res, connecteds = initialize(msg,websocket)
                     if len(res) == 2:
+                        # broadcast this message,
+                        # role update, message to all the connectedIds
                         res_broad = res[1]
                         ids = connecteds[1]
                         websockets.broadcast(ids,json.dumps(res_broad))
+                    # then broadcast a request to ask for ready only to the players
                     connecteds = connecteds[0]
                     result = [res[0]]
                     broadcast = True
@@ -70,6 +76,7 @@ async def handler(websocket:WebSocketCommonProtocol):
                     result = res
                     broadcast = True
                     if (res[0]['type'] != "error"):
+                        # sleep of 3s so that won message is displayed properly
                         sleep = True
 
                 case "cancel":
@@ -79,7 +86,7 @@ async def handler(websocket:WebSocketCommonProtocol):
                 case _:
                     pass
 
-            print("result",result,broadcast)
+            # print("result",result,broadcast)
             for r in result:
                 try:
                     if (broadcast):
@@ -98,24 +105,27 @@ async def handler(websocket:WebSocketCommonProtocol):
             if (websocket in conIds):
                 conIds.remove(websocket)
             websockets.broadcast(conIds,json.dumps({"type":"remove_player","data":{"name":name,"admin":admin}}))
-        print("LEAVEING")
+        # print("LEAVEING")
+
     except websockets.ConnectionClosedError as e:
         conIds,name,admin = leaveRoom(websocket)
         if name != "":
             if (websocket in conIds):
                 conIds.remove(websocket)
             websockets.broadcast(conIds,json.dumps({"type":"remove_player","data":{"name":name,"admin":admin}}))
-        print("LEAVEING with error:",e)
-    # except Exception as e:
-    #     print(e)
-    #     await websocket.send(json.dumps({"type":"error","message":"Internal server error"}))
+        # print("LEAVEING with error:",e)
+
+    except Exception as e:
+        print(e)
+        await websocket.send(json.dumps({"type":"error","message":"Internal server error"}))
+
     finally:
         conIds,name,admin = leaveRoom(websocket)
         if name != "":
             if (websocket in conIds):
                 conIds.remove(websocket)
             websockets.broadcast(conIds,json.dumps({"type":"remove_player","data":{"name":name,"admin":admin}}))
-        print("Finally")
+        # print("Finally")
 
 async def broadcastShutdown(stop):
     try:
