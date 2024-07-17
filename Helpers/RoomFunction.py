@@ -3,7 +3,7 @@ from datetime import datetime
 from random import randint
 
 from models import Player, Room
-from .globals import rooms,prevDelete,all_connections,AVAILABLE_GAMES
+from .globals import rooms,all_connections,AVAILABLE_GAMES
 from websockets import WebSocketCommonProtocol
 
 MAX_PLAYERS = 6

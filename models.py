@@ -2,6 +2,7 @@ from datetime import datetime
 
 from websockets import WebSocketCommonProtocol
 from Helpers.Connect4 import Connect4
+from Helpers.InfiniteTicTac import InfiniteTicTac
 from Helpers.TicTacToe import TicTacToe
 
 class Player:
@@ -37,7 +38,7 @@ class Game:
     watchers: list[str]
     waiting:list[str]
     gameName: str
-    __gameObj: Connect4 | TicTacToe | None
+    __gameObj: Connect4 | TicTacToe | InfiniteTicTac | None
 
     def __init__(self) -> None:
         self.players = []
@@ -59,10 +60,13 @@ class Game:
         match(self.gameName):
             case "Tic Tac Toe":
                 self.__gameObj = TicTacToe()
-                pass
+                
             case "Connect 4":
                 self.__gameObj = Connect4()
-                pass
+                
+            case "Infinite Tic Tac":
+                self.__gameObj = InfiniteTicTac()
+                
             case _:
                 self.board = None
                 return None
@@ -72,11 +76,15 @@ class Game:
     
     def playGame(self,move:any):
 
+
         match(self.gameName):
             case "Tic Tac Toe":
                 return self.__gameObj.play(move)
             
             case "Connect 4":
+                return self.__gameObj.play(move)
+            
+            case "Infinite Tic Tac":
                 return self.__gameObj.play(move)
                 
             case _:
