@@ -27,5 +27,5 @@ jobs:
         python-version: 3.12
     - name: Install dependencies
       run: |
-        echo "Environment $DEBUG"
+        echo "Environment {{ $DEBUG }}"
    
