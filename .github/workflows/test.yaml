@@ -13,6 +13,7 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    environment: test
     env:
         DEBUG: ${{ vars.DEBUG }}
         FORGET_KEY: ${{ vars.FORGET_KEY }}
