@@ -28,7 +28,7 @@ jobs:
         python-version: 3.12
     - name: Install dependencies
       run: |
-        echo "Environment ${{ env.DEBUG }}"
+        echo "Environment ${{ DEBUG }}"
       env:
         DEBUG: ${{ vars.DEBUG }}
         FORGET_KEY: ${{ vars.FORGET_KEY }}
